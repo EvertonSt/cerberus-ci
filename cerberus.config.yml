@@ -1,0 +1,55 @@
+# Cerberus CI Configuration
+# See: https://github.com/EvertonSt/cerberus-ci#configuration
+
+# AI Provider Configuration
+ai:
+  # Provider: claude | openai-compatible | mock
+  provider: claude
+  # Model identifier (provider-specific)
+  model: claude-sonnet-4-6
+  # base_url: only required for openai-compatible provider
+  # Examples:
+  #   OpenAI:  https://api.openai.com/v1
+  #   Ollama:  http://localhost:11434/v1
+  #   Groq:    https://api.groq.com/openai/v1
+  # base_url: null
+  # Environment variable holding the API key
+  api_key_env: ANTHROPIC_API_KEY
+
+# Classifier Configuration
+classifier:
+  # Number of consecutive failures to auto-classify as regression
+  consecutive_failures_threshold: 3
+  # How many recent runs to check for pass/fail patterns
+  history_depth: 5
+  # How long (days) to cache verdicts before re-classifying
+  cache_ttl_days: 30
+
+# Performance Regression Gate
+perf:
+  # Branch to use as baseline for performance comparison
+  baseline_branch: main
+  # Number of baseline runs for rolling median/p90
+  baseline_runs: 10
+  # Default regression threshold (flag if >N% slower than baseline)
+  threshold_pct: 20
+  # Per-metric threshold overrides
+  thresholds: {}
+  # Metrics to exclude from gating (known noisy metrics)
+  exclude: []
+
+# Gate Logic (deterministic — no AI calls at gate time)
+gate:
+  # Fail the build if any regression is detected
+  fail_on_regression: true
+  # Fail the build if any test is classified as unknown
+  fail_on_unknown: false
+  # Fail the build if performance regression detected
+  fail_on_perf_regression: true
+  # Maximum number of new flaky tests before failing
+  max_new_flaky_tests: 3
+
+# Storage
+storage:
+  # Path to SQLite database (relative to project root)
+  db_path: .cerberus/data.db

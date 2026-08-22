@@ -1,0 +1,56 @@
+{
+  "name": "cerberus-ci",
+  "version": "0.1.0",
+  "description": "AI-powered test-health and performance-regression gate for CI pipelines",
+  "main": "dist/cli/index.js",
+  "bin": {
+    "cerberus": "dist/cli/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src/**/*.ts test/**/*.ts",
+    "lint:fix": "eslint src/**/*.ts test/**/*.ts --fix",
+    "format": "prettier --write 'src/**/*.ts' 'test/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts' 'test/**/*.ts'",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ci",
+    "testing",
+    "flaky-tests",
+    "performance",
+    "regression",
+    "ai",
+    "github-actions"
+  ],
+  "author": "EvertonSt",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "commander": "^13.1.0",
+    "js-yaml": "^4.1.0",
+    "sql.js": "^1.11.0",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.10.0",
+    "@types/sql.js": "^1.4.7",
+    "@types/xml2js": "^0.4.14",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^9.16.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.67.0",
+    "vitest": "^2.1.8"
+  }
+}

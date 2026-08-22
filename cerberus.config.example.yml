@@ -1,0 +1,117 @@
+# Cerberus CI Configuration
+# See: https://github.com/EvertonSt/cerberus-ci#configuration
+
+# ═══════════════════════════════════════════════════════════════
+# AI Provider Configuration
+# ═══════════════════════════════════════════════════════════════
+#
+# Cerberus supports three provider modes:
+#
+# 1. Claude (default) — uses native Anthropic SDK
+# 2. OpenAI-compatible — works with OpenAI, OpenRouter, Groq, Ollama, etc.
+# 3. Mock — deterministic local heuristic, no API key needed
+#
+# The provider-agnostic architecture means you can switch between providers
+# with just a config change — no code changes required.
+
+ai:
+  # Provider selection: claude | openai-compatible | mock
+  provider: claude
+
+  # Model identifier (provider-specific)
+  # Claude: claude-sonnet-4-6, claude-3-5-haiku-20241022, etc.
+  # OpenAI: gpt-4, gpt-4o, gpt-4-turbo, etc.
+  # Ollama: llama3, codellama, etc.
+  model: claude-sonnet-4-6
+
+  # ═══════════════════════════════════════════════════════════════
+  # For OpenAI-compatible providers, set base_url:
+  # ═══════════════════════════════════════════════════════════════
+  #
+  # OpenAI:     https://api.openai.com/v1
+  # OpenRouter: https://openrouter.ai/api/v1
+  # Groq:       https://api.groq.com/openai/v1
+  # Ollama:     http://localhost:11434/v1
+  # LM Studio:  http://localhost:1234/v1
+  # DeepSeek:   https://api.deepseek.com/v1
+  #
+  # base_url: https://api.openai.com/v1
+
+  # Environment variable holding the API key
+  # For Claude: ANTHROPIC_API_KEY
+  # For OpenAI: OPENAI_API_KEY
+  api_key_env: ANTHROPIC_API_KEY
+
+# ═══════════════════════════════════════════════════════════════
+# Classifier Configuration
+# ═══════════════════════════════════════════════════════════════
+
+classifier:
+  # Number of consecutive failures before auto-classifying as regression
+  # (bypasses AI classification — deterministic rule)
+  consecutive_failures_threshold: 3
+
+  # How many recent runs to check for pass/fail history patterns
+  history_depth: 5
+
+  # How long (days) to cache verdicts before re-classifying
+  # Prevents repeated AI calls for the same recurring failure
+  cache_ttl_days: 30
+
+# ═══════════════════════════════════════════════════════════════
+# Performance Regression Gate
+# ═══════════════════════════════════════════════════════════════
+
+perf:
+  # Branch to use as baseline for performance comparison
+  # PR runs compare against this branch's history
+  baseline_branch: main
+
+  # Number of baseline runs for rolling median calculation
+  # More runs = more stable baseline
+  baseline_runs: 10
+
+  # Default regression threshold percentage
+  # Flag as regression if current > baseline * (1 + threshold_pct/100)
+  threshold_pct: 20
+
+  # Per-metric threshold overrides
+  # Useful for metrics with known high variance
+  thresholds:
+    # api_response_time_ms: 50   # more lenient for API metrics
+    # page_load_ms: 15           # stricter for page load
+
+  # Metrics to exclude from gating
+  # Useful for known-noisy metrics you want to monitor but not gate on
+  exclude: []
+
+# ═══════════════════════════════════════════════════════════════
+# Gate Logic (Deterministic)
+# ═══════════════════════════════════════════════════════════════
+#
+# The gate NEVER calls an AI provider — it only reads stored verdicts.
+# This ensures gate behavior is 100% deterministic and reproducible.
+
+gate:
+  # Fail the build if any regression is detected
+  fail_on_regression: true
+
+  # Fail the build if any test is classified as unknown
+  # (default: warn but don't fail — unknowns need investigation)
+  fail_on_unknown: false
+
+  # Fail the build if performance regression detected
+  fail_on_perf_regression: true
+
+  # Maximum number of new flaky tests before failing
+  # If flaky count exceeds this, the test suite is too unstable
+  max_new_flaky_tests: 3
+
+# ═══════════════════════════════════════════════════════════════
+# Storage
+# ═══════════════════════════════════════════════════════════════
+
+storage:
+  # Path to SQLite database (relative to project root)
+  # This file is gitignored by default
+  db_path: .cerberus/data.db

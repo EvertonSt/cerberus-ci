@@ -1,0 +1,92 @@
+name: 'Cerberus CI Quality Gate'
+description: 'AI-powered test-health and performance-regression gate for CI pipelines'
+author: 'EvertonSt'
+
+branding:
+  icon: 'shield'
+  color: 'purple'
+
+inputs:
+  test-results-path:
+    description: 'Path to test result file (JUnit XML or Playwright JSON)'
+    required: true
+  format:
+    description: 'Test result format: junit or playwright-json'
+    required: false
+    default: 'playwright-json'
+  ai-provider:
+    description: 'AI provider: claude, openai-compatible, or mock'
+    required: false
+    default: 'claude'
+  ai-api-key:
+    description: 'API key for the AI provider (falls back to mock mode if not set)'
+    required: false
+    default: ''
+  ai-base-url:
+    description: 'Base URL for openai-compatible provider'
+    required: false
+    default: ''
+  config-path:
+    description: 'Path to cerberus.config.yml'
+    required: false
+    default: 'cerberus.config.yml'
+  run-id:
+    description: 'CI run identifier (defaults to github.run_id)'
+    required: false
+    default: ''
+  skip-report:
+    description: 'Skip posting PR comment report'
+    required: false
+    default: 'false'
+  annotations:
+    description: 'Emit GitHub Actions annotations (::error/::warning) for inline PR feedback'
+    required: false
+    default: 'false'
+
+outputs:
+  gate-result:
+    description: 'Gate result: pass or fail'
+    value: ${{ steps.cerberus.outputs.gate-result }}
+  flaky-count:
+    description: 'Number of flaky tests detected'
+    value: ${{ steps.cerberus.outputs.flaky-count }}
+  regression-count:
+    description: 'Number of regressions detected'
+    value: ${{ steps.cerberus.outputs.regression-count }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Cerberus CI
+      shell: bash
+      run: npm install -g cerberus-ci
+
+    - name: Run Cerberus CI
+      id: cerberus
+      shell: bash
+      env:
+        INPUT_TEST_RESULTS_PATH: ${{ inputs.test-results-path }}
+        INPUT_FORMAT: ${{ inputs.format }}
+        INPUT_AI_PROVIDER: ${{ inputs.ai-provider }}
+        INPUT_AI_API_KEY: ${{ inputs.ai-api-key }}
+        INPUT_AI_BASE_URL: ${{ inputs.ai-base-url }}
+        INPUT_CONFIG_PATH: ${{ inputs.config-path }}
+        INPUT_RUN_ID: ${{ inputs.run-id }}
+        INPUT_SKIP_REPORT: ${{ inputs.skip-report }}
+        INPUT_ANNOTATIONS: ${{ inputs.annotations }}
+        INPUT_BRANCH: ''
+        INPUT_PR_NUMBER: ''
+        GITHUB_SHA: ${{ github.sha }}
+        GITHUB_RUN_ID: ${{ github.run_id }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_HEAD_REF: ${{ github.head_ref }}
+        GITHUB_REF_NAME: ${{ github.ref_name }}
+        GITHUB_EVENT_PULL_REQUEST_NUMBER: ${{ github.event.pull_request.number }}
+      run: |
+        chmod +x "${{ github.action_path }}/run.sh"
+        bash "${{ github.action_path }}/run.sh"

@@ -1,0 +1,58 @@
+# Cerberus CI Demo Workflow
+# Runs Cerberus against its own test suite (dogfooding)
+
+name: Cerberus Demo
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - name: Run Tests
+        run: npm test
+
+  cerberus-gate:
+    name: Cerberus Quality Gate
+    runs-on: ubuntu-latest
+    needs: test
+    if: always() && needs.test.result != 'cancelled'
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Run Tests with JSON Reporter
+        run: npx vitest run --reporter=json --outputFile=test-results.json || true
+
+      - name: Run Cerberus
+        uses: ./
+        with:
+          ai-provider: mock
+          test-results-path: test-results.json
+          format: playwright-json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          annotations: true
