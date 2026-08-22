@@ -105,55 +105,55 @@ export async function compareRuns(options: CompareOptions): Promise<CompareResul
     let unchanged = 0;
 
     for (const name of allTestNames) {
-      const before = beforeMap.get(name);
-      const after = afterMap.get(name);
+      const beforeTest = beforeMap.get(name);
+      const afterTest = afterMap.get(name);
 
-      if (!before && after) {
+      if (!beforeTest && afterTest) {
         // New test in after run
         testDiffs.push({
           testName: name,
-          filePath: after.file_path,
+          filePath: afterTest.file_path,
           before: '(new)',
-          after: after.status,
+          after: afterTest.status,
           beforeDurationMs: 0,
-          afterDurationMs: after.duration_ms,
-          deltaMs: after.duration_ms,
+          afterDurationMs: afterTest.duration_ms,
+          deltaMs: afterTest.duration_ms,
         });
-        if (after.status === 'failed' || after.status === 'timedOut') newFailures++;
-      } else if (!after) {
+        if (afterTest.status === 'failed' || afterTest.status === 'timedOut') newFailures++;
+      } else if (!afterTest && beforeTest) {
         // Removed test
         testDiffs.push({
           testName: name,
-          filePath: before.file_path,
-          before: before.status,
+          filePath: beforeTest.file_path,
+          before: beforeTest.status,
           after: '(removed)',
-          beforeDurationMs: before.duration_ms,
+          beforeDurationMs: beforeTest.duration_ms,
           afterDurationMs: 0,
-          deltaMs: -before.duration_ms,
+          deltaMs: -beforeTest.duration_ms,
         });
-        if (before.status === 'failed' || before.status === 'timedOut') resolved++;
-      } else {
+        if (beforeTest.status === 'failed' || beforeTest.status === 'timedOut') resolved++;
+      } else if (beforeTest && afterTest) {
         // Test exists in both — only include if status changed or both failed
-        const statusChanged = before.status !== after.status;
+        const statusChanged = beforeTest.status !== afterTest.status;
         const bothFailed =
-          (before.status === 'failed' || before.status === 'timedOut') &&
-          (after.status === 'failed' || after.status === 'timedOut');
+          (beforeTest.status === 'failed' || beforeTest.status === 'timedOut') &&
+          (afterTest.status === 'failed' || afterTest.status === 'timedOut');
 
         if (statusChanged || bothFailed) {
           testDiffs.push({
             testName: name,
-            filePath: after.file_path,
-            before: before.status,
-            after: after.status,
-            beforeDurationMs: before.duration_ms,
-            afterDurationMs: after.duration_ms,
-            deltaMs: after.duration_ms - before.duration_ms,
+            filePath: afterTest.file_path,
+            before: beforeTest.status,
+            after: afterTest.status,
+            beforeDurationMs: beforeTest.duration_ms,
+            afterDurationMs: afterTest.duration_ms,
+            deltaMs: afterTest.duration_ms - beforeTest.duration_ms,
           });
 
           if (statusChanged) {
             const wasFailing =
-              before.status === 'failed' || before.status === 'timedOut';
-            const isFailing = after.status === 'failed' || after.status === 'timedOut';
+              beforeTest.status === 'failed' || beforeTest.status === 'timedOut';
+            const isFailing = afterTest.status === 'failed' || afterTest.status === 'timedOut';
             if (wasFailing && !isFailing) resolved++;
             else if (!wasFailing && isFailing) newFailures++;
           }
