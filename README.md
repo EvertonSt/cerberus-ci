@@ -1,5 +1,7 @@
 # 🐕‍🦺 Cerberus CI
 
+[![CI](https://github.com/EvertonSt/cerberus-ci/actions/workflows/ci.yml/badge.svg)](https://github.com/EvertonSt/cerberus-ci/actions) [![npm](https://img.shields.io/npm/v/cerberus-ci)](https://www.npmjs.com/package/cerberus-ci) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 **AI-powered test-health and performance-regression gate for CI pipelines.**
 
 > *"Cerberus watches your CI test history, tells you which failures are real regressions vs. flaky noise, catches performance regressions before they ship, and posts a plain-English quality report on every pull request."*
