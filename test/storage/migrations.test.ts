@@ -7,7 +7,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { CerberusDB } from '../../src/storage/database.js';
-import { getCurrentVersion, applyMigrations, MIGRATIONS } from '../../src/storage/migrations.js';
+import { getCurrentVersion, MIGRATIONS } from '../../src/storage/migrations.js';
 
 describe('Database Migrations', () => {
   let tmpDir: string;

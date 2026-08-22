@@ -145,7 +145,7 @@ describe('generateAnnotations', () => {
       error_message: 'timeout',
     });
 
-    const test3 = db.insertTestResult({
+    db.insertTestResult({
       run_id: runId,
       test_name: 'login.spec.ts:15',
       file_path: 'tests/login.spec.ts',

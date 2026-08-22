@@ -8,7 +8,7 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import { CerberusDB } from '../../src/storage/index.js';
 import { checkPerfRegressions } from '../../src/perf/index.js';
-import { generateDefaultConfig, type CerberusConfig } from '../../src/config/schema.js';
+import { type CerberusConfig } from '../../src/config/schema.js';
 
 describe('perf baseline priority', () => {
   let tmpDir: string;

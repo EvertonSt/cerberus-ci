@@ -2,9 +2,8 @@
  * Tests for ClaudeProvider — mocked HTTP, never hits real Anthropic API.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { parseClassificationResult } from '../../src/ai/claude-provider.js';
-import type { ClassificationInput, SummaryInput } from '../../src/ai/provider.js';
 
 // Mock the Anthropic SDK
 const mockCreate = vi.fn();
