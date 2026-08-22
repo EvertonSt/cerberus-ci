@@ -1,5 +1,5 @@
 # Cerberus CI Demo Workflow
-# Runs Cerberus against its own test suite (dogfooding)
+# Dogfoods Cerberus against its own test suite using the published action
 
 name: Cerberus Demo
 
@@ -49,7 +49,7 @@ jobs:
         run: npx vitest run --reporter=json --outputFile=test-results.json || true
 
       - name: Run Cerberus
-        uses: ./
+        uses: EvertonSt/cerberus-ci@v1
         with:
           ai-provider: mock
           test-results-path: test-results.json
