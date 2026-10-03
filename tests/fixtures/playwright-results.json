@@ -1,0 +1,150 @@
+[
+  {
+    "suites": [
+      {
+        "title": "checkout.spec.ts",
+        "file": "tests/checkout.spec.ts",
+        "specs": [
+          {
+            "title": "should complete checkout successfully",
+            "tests": [
+              {
+                "results": [
+                  {
+                    "status": "passed",
+                    "duration": 1250,
+                    "error": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "should handle payment timeout",
+            "tests": [
+              {
+                "results": [
+                  {
+                    "status": "failed",
+                    "duration": 30000,
+                    "error": {
+                      "message": "Timeout of 30000ms exceeded.",
+                      "stack": "Error: Timeout of 30000ms exceeded.\n    at page.waitForTimeout (checkout.spec.ts:42:10)"
+                    }
+                  },
+                  {
+                    "status": "passed",
+                    "duration": 850,
+                    "error": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "should apply discount code",
+            "tests": [
+              {
+                "results": [
+                  {
+                    "status": "failed",
+                    "duration": 2100,
+                    "error": {
+                      "message": "Expected total to equal $45.00 but received $50.00",
+                      "stack": "AssertionError: Expected total to equal $45.00 but received $50.00\n    at expect (checkout.spec.ts:67:22)"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "login.spec.ts",
+        "file": "tests/login.spec.ts",
+        "specs": [
+          {
+            "title": "should login with valid credentials",
+            "tests": [
+              {
+                "results": [
+                  {
+                    "status": "passed",
+                    "duration": 980,
+                    "error": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "should show error for invalid password",
+            "tests": [
+              {
+                "results": [
+                  {
+                    "status": "passed",
+                    "duration": 1100,
+                    "error": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "should handle network error during login",
+            "tests": [
+              {
+                "results": [
+                  {
+                    "status": "failed",
+                    "duration": 5000,
+                    "error": {
+                      "message": "fetch failed: ECONNRESET",
+                      "stack": "TypeError: fetch failed\n    at login.spec.ts:18:15"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "title": "search.spec.ts",
+        "file": "tests/search.spec.ts",
+        "specs": [
+          {
+            "title": "should return results for valid query",
+            "tests": [
+              {
+                "results": [
+                  {
+                    "status": "passed",
+                    "duration": 650,
+                    "error": null
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "title": "should handle empty search gracefully",
+            "tests": [
+              {
+                "results": [
+                  {
+                    "status": "skipped",
+                    "duration": 0,
+                    "error": null
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

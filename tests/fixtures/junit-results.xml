@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="unit" tests="5" failures="2" errors="0" skipped="1" time="3.5">
+    <testcase name="should calculate total" classname="Cart" time="0.15">
+    </testcase>
+    <testcase name="should apply tax" classname="Cart" time="0.12">
+      <failure message="Expected 10.50 to equal 11.00">
+Expected 10.50 to equal 11.00
+    at Cart.test.ts:25:22
+      </failure>
+    </testcase>
+    <testcase name="should handle empty cart" classname="Cart" time="0.08">
+    </testcase>
+    <testcase name="should validate coupon code" classname="Cart" time="0.22">
+      <failure message="Coupon validation failed: invalid format">
+Coupon validation failed: invalid format
+    at Cart.test.ts:42:18
+      </failure>
+    </testcase>
+    <testcase name="should apply discount" classname="Cart" time="0.0">
+      <skipped message="Not implemented yet" />
+    </testcase>
+  </testsuite>
+</testsuites>
