@@ -1,0 +1,185 @@
+name: CI
+
+# Five jobs, each answering one question:
+#   quality   - is the code formatted, lint-free, typed, and does it build?
+#   unit      - does the engine still do what it did?
+#   e2e       - does the site actually work in a browser?
+#   readiness - do the promises in the docs still hold? (links, secrets, authorship)
+#   security  - are the dependencies still inside the bar we agreed to?
+#
+# Every third-party action is pinned to a full commit SHA. A tag is a mutable
+# pointer: `actions/checkout@v4` resolves to whatever the tag points at on the
+# morning the pipeline runs, which is the same trust model as a lockfile you
+# did not write. The version is kept in a comment so a reviewer can read it.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Least privilege by default; each job widens only what it needs.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Fail rather than install a different pnpm than the lockfile was made with.
+  COREPACK_ENABLE_STRICT: "1"
+
+jobs:
+  quality:
+    name: quality (format · lint · types · build)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Needed for the attribution gate, which reads the full history.
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: format
+        run: pnpm format:check
+
+      - name: lint
+        run: pnpm lint
+
+      # Each step reports its own exit code. `tsc | head` would exit with
+      # head's status and report a failing typecheck as a passing gate.
+      - name: types
+        run: pnpm typecheck
+
+      - name: build
+        run: pnpm build
+
+  unit:
+    name: unit tests (+ coverage floor)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # `coverage` is not a separate step from the tests on purpose: a coverage
+      # report of a suite that did not run is an empty report that passes.
+      - name: tests with coverage floor
+        run: pnpm test:unit:coverage
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 7
+
+  e2e:
+    name: end-to-end journey
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: install browser
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: run the journey
+        run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: failure()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+  readiness:
+    name: readiness (links · secrets · authorship)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The authorship gate reads every commit message on every ref, and a
+          # shallow clone would let it report PASS while proving nothing.
+          fetch-depth: 0
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: no credential is committed
+        run: pnpm verify:secrets
+
+      - name: every internal link resolves
+        run: pnpm verify:links
+
+      - name: no AI tool is credited
+        run: pnpm verify:attribution
+
+  security:
+    name: security audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      # Calibrated by SURFACE, not by threshold. Production dependencies are the
+      # surface that reaches users and must sit at `high`; the dev tree is held
+      # at `critical` because it never ships. Moving a threshold to make a run
+      # green would leave a job that displays the word "audit" while measuring
+      # nothing — see docs/decisions/0004-calibrate-the-audit-by-surface.md.
+      - name: audit production dependencies
+        run: pnpm audit --audit-level high --prod
+
+      - name: audit development dependencies
+        continue-on-error: true
+        run: pnpm audit --audit-level critical
+
+      # A dev-only advisory should not be able to hold a release hostage, and
+      # should not be able to disappear silently either. This step fails if the
+      # exemption list is ever non-empty without a reason attached.
+      - name: the exemption list has no silent entries
+        run: |
+          if [ -f pnpm-workspace.yaml ]; then
+            if grep -A20 'auditConfig' pnpm-workspace.yaml | grep -q 'ignoreCves'; then
+              echo "::error::pnpm-workspace.yaml declares ignored CVEs. Each one needs a reason."
+              exit 1
+            fi
+          fi
+          echo "no ignored advisories"

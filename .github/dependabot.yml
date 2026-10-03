@@ -1,0 +1,48 @@
+version: 2
+
+# Majors are ISOLATED, never muted.
+#
+# A muted major is invisible: nothing reminds you it exists, so it drifts
+# further behind until the upgrade is a rewrite. An isolated major arrives on
+# its own pull request, on its own evidence, and competes with nothing else.
+#
+# `open-pull-requests-limit: 0` is the other half of that promise: it means
+# Dependabot never quietly defers an update either.
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: Etc/UTC
+    open-pull-requests-limit: 0
+    # Every label named here must EXIST in the repository. A label that does not
+    # exist makes the bot warn on every single pull request, which is how a
+    # real warning gets ignored.
+    labels:
+      - dependencies
+      - chore
+    groups:
+      # Patch and minor updates arrive together because they rarely conflict
+      # with each other. Majors are deliberately left ungrouped, so each major
+      # arrives alone and can be judged on its own evidence.
+      patch-and-minor:
+        update-types:
+          - patch
+          - minor
+
+  # The workflow's own actions move with the repository.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 0
+    labels:
+      - dependencies
+      - chore
+
+# A security advisory opens its own pull request through the npm entry above,
+# with the `security` label applied by GitHub itself. No second npm entry is
+# declared here: the ecosystem+directory pair must be unique, and a duplicate
+# makes the whole configuration invalid rather than additive.
