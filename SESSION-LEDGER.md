@@ -50,6 +50,16 @@ the site, from two source repositories that shared a name and nothing else.
   pinned to a commit SHA, Dependabot with majors isolated rather than muted.
 - **Docs.** Recruiter-facing README with real screenshots, six decision records,
   and this ledger.
+- **Two defects found after the suite was already green**, both by running the
+  gate again rather than by reading the code:
+  - **No `.gitattributes`, so `format:check` failed on every Windows clone.**
+    The blobs were LF, `core.autocrlf=true` rewrote the working tree to CRLF,
+    and Prettier defaults to `endOfLine: "lf"`. 96 files. It passed on CI and
+    failed locally — the combination that teaches people the gate is noise.
+  - **The end-to-end journey passed while the page rendered unstyled.** It
+    drives the dev server over `127.0.0.1` while Next binds `localhost`, so
+    Next refused to serve its own chunks. None of the assertions depend on a
+    stylesheet arriving; the only symptom was a line in the server log.
 
 ### PROOF
 
@@ -76,6 +86,24 @@ attribution  exit 1  src/components/ArchitectureDiagram.tsx:95 — robot emoji
 secrets      exit 1  .probe-secret.ts:1 — anthropic key literal (redacted)
 links        exit 1  README.md -> ./does-not-exist.md — file does not exist
 links        exit 1  README.md -> #no-such-heading — no such heading
+```
+
+Both sides of the line-ending fix, because a fix that was never seen failing is
+a fix you cannot claim works:
+
+```
+fresh clone, autocrlf=true, WITH .gitattributes
+  exit 0    0 files flagged
+fresh clone, autocrlf=true, WITHOUT .gitattributes
+  exit 1    96 files flagged, scripts/gate.sh checked out with CRLF
+```
+
+The end-to-end fix, measured on the server log rather than on the assertions:
+
+```
+before   "Blocked cross-origin request"   1 occurrence per run
+after    "Blocked cross-origin request"   0 occurrences per run
+5 passed before, 5 passed after — the suite could not tell the difference
 ```
 
 The authorship hook, before it was trusted:
@@ -108,10 +136,15 @@ of what we checked" is the whole value of this section.
   may surface an action version or a cache key that does not behave locally.
 - **The build was verified on Windows only.** `pnpm build` and `pnpm test:e2e`
   pass here; the CI jobs run on `ubuntu-latest` and have never executed.
+- **The end-to-end suite asserts structure, not rendering.** It proved one `<h1>`
+  per page, 200 on every route, working navigation, a 404 and the security
+  headers. It did not prove a stylesheet loaded — and demonstrably did not,
+  while the app was rendering unstyled behind it. A visual regression at an
+  untested viewport is still invisible to it.
 - **The screenshots were taken from a dev server**, not from a production build.
   They should match, but nothing has compared them.
 - **The clone URL in the README does not resolve yet.** `git clone
-  https://github.com/EvertonSt/cerberus-ci.git` is the intended permanent
+https://github.com/EvertonSt/cerberus-ci.git` is the intended permanent
   home, but no remote is configured and no repository exists under that name,
   so the link is a promise rather than a fact until the first push. Everything
   below it in this file was run against the working tree.
@@ -129,3 +162,5 @@ of what we checked" is the whole value of this section.
    alone. If it does not, the honest move is to delete it.
 4. Component tests for the site, or an explicit decision that the e2e journey is
    the site's whole test story.
+5. Assert something visual in the e2e run — a computed style, a loaded font, or
+   a screenshot diff — so the next "green but broken" has somewhere to land.

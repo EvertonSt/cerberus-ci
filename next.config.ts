@@ -18,6 +18,19 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
 
   /*
+   * The end-to-end suite drives the dev server over 127.0.0.1, and Next treats
+   * that as a different origin from the `localhost` it was bound to. Without
+   * this it refuses to serve its own chunks and the page renders unstyled.
+   *
+   * Worth recording how this was found: the journey test passed anyway, because
+   * it asserts structure, navigation, a 404 and response headers - none of which
+   * depend on a stylesheet arriving. The only symptom was a warning in the
+   * server log. A green test suite is not evidence that the app worked, so the
+   * fix belongs here rather than in the assertions.
+   */
+  allowedDevOrigins: ["127.0.0.1", "localhost"],
+
+  /*
    * Security headers live HERE, not in vercel.json.
    *
    * Two sources of truth for the same header list means one of them is stale,

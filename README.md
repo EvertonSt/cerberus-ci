@@ -112,7 +112,9 @@ smaller one that claims exactly what it does:
 
 - **The site has no component-level unit tests.** Its behaviour is covered by
   the Playwright journey, which asserts structure and navigation rather than
-  pixels. A visual regression would not be caught.
+  pixels. That gap is not theoretical: the journey passed 5/5 while the dev
+  server was refusing to serve the page's own stylesheet. Nothing in it
+  depends on a stylesheet arriving.
 - **The engine's coverage number covers `src/lib` and `src/cli`.** It is not a
   statement about the React components, which have no unit tests at all.
 - **The classifier has been exercised against mocked HTTP and the heuristic
