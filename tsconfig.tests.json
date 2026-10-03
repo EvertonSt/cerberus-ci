@@ -1,0 +1,11 @@
+{
+  "//": "The test suite is typechecked separately from the product, and this file is the whole reason. See docs/decisions/0005-tests-are-not-indexed-code.md.",
+  "//2": "`noUncheckedIndexedAccess` is ON for src/ and OFF here. The flag earns its keep in product code, where `results[results.length - 1]` really can be undefined at runtime. In a test it fires almost exclusively on `expect(rows[0].name)`, where the assertion itself is the proof that the element exists — turning those into non-null assertions would add 70-odd `!` characters that assert nothing the following line does not already assert. The flag stays ON for src/, where a missing element is a real crash.",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noUncheckedIndexedAccess": false,
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["tests/**/*.ts", "e2e/**/*.ts"],
+  "exclude": ["node_modules", ".next", ".next-ci"]
+}

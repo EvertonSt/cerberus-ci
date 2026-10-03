@@ -1,0 +1,15 @@
+# pnpm 11 blocks every dependency's lifecycle scripts by default and reads this
+# allowlist from pnpm-workspace.yaml (not package.json). `allowBuilds` is an
+# explicit true/false map, so approving a package is a visible diff a reviewer
+# can argue with.
+#
+#   esbuild        — ships a prebuilt binary; backs tsx and Vitest
+#   unrs-resolver  — ships a prebuilt binary; backs the lint resolver
+#
+# Both install from prebuilt artifacts rather than compiling untrusted source.
+# Anything set to `false` — and anything not named here — stays blocked, so a
+# future transitive dependency cannot run a postinstall script without someone
+# editing this file on purpose.
+allowBuilds:
+  esbuild: true
+  unrs-resolver: true

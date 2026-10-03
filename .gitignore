@@ -1,13 +1,48 @@
-# secrets and env
+# secrets and environment
 .env
 .env.*
 !.env.example
 
-# dependencies and builds
+# dependencies
 node_modules/
-dist/
+
+# build output
+# `.next*` rather than `.next`: NEXT_DIST_DIR lets a second build live beside the
+# default one, and naming the pattern means a new build directory cannot slip in
+# untracked. This is not cosmetic - `git add -A` with `.next` unignored stages
+# roughly 300 compiled files plus a manifest of every route in the app.
+.next/
+.next-*/
+out/
 build/
+dist/
+*.tsbuildinfo
+
+# test and coverage output
 coverage/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# local databases and reports produced by running the CLI
+*.db
+*.sqlite
+*.sqlite3
+cerberus-report.md
 
 # runtime evidence
 *.log
+npm-debug.log*
+pnpm-debug.log*
+
+# editor and OS noise
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Vercel
+.vercel
+.vercelproject
