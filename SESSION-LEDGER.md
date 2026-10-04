@@ -253,3 +253,40 @@ after    RUN_SH_EXIT=1     flaky-count=1   regression-count=1   runs in db: 1
 2. Publish a version, or point the Action at a checkout, so `action.yml` runs
    this code instead of 0.1.0.
 3. Re-check `braces` when a patched version is actually published.
+
+---
+
+## 2026-10-03 — First push, and the run
+
+The NEXT item on the previous entry was "first push, and read the run". Here
+is the run.
+
+### PROOF
+
+```
+https://github.com/EvertonSt/cerberus-ci/actions/runs/37166091673
+conclusion: success
+
+  success  quality (format · lint · types · build)
+  success  unit tests (+ coverage floor)
+  success  end-to-end journey            5 passed (9.3s)
+  success  readiness (links · secrets · authorship)
+  success  security audit
+```
+
+Tag `v2.0.0` published, so the `uses: EvertonSt/cerberus-ci@v2.0.0` in the
+README and on the site resolves to something real.
+
+### DID NOT PROVE
+
+- **The end-to-end job passes on a GitHub runner, which is the first thing the
+  WSL run could not check.** Locally it failed on `libnspr4.so`, a system
+  library that `playwright install --with-deps` installs and that needs root.
+  CI has that step and the job is green, so the gap is now closed by evidence
+  rather than by assumption.
+- **The Action still has not run on GitHub.** `action.yml` was verified by
+  driving `run.sh` locally against this repository's CLI. Using the published
+  Action end to end requires a repository that consumes it, which would mean
+  a second repository and a publishing step. Neither was done.
+- **Nothing was deployed.** `vercel.json` is configured and the production
+  build is verified; no deployment exists.
