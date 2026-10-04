@@ -60,6 +60,14 @@ the site, from two source repositories that shared a name and nothing else.
     drives the dev server over `127.0.0.1` while Next binds `localhost`, so
     Next refused to serve its own chunks. None of the assertions depend on a
     stylesheet arriving; the only symptom was a line in the server log.
+  - **The gate was not repeatable.** Next rewrites `tsconfig.json` on every
+    build, expanding short arrays the way Prettier collapses them and ending
+    the last line CRLF on Windows. So `pnpm build` left the tree in a state
+    the next `pnpm gate` rejected — and `git status` called the tree clean
+    while `git diff` showed nothing, because Git normalises the line ending
+    away. A contributor who built before gating could see the failure and
+    find nothing to revert. `tsconfig.json` is now outside Prettier's remit,
+    and `.next-e2e` joined the generated-output ignores.
 
 ### PROOF
 
@@ -104,6 +112,13 @@ The end-to-end fix, measured on the server log rather than on the assertions:
 before   "Blocked cross-origin request"   1 occurrence per run
 after    "Blocked cross-origin request"   0 occurrences per run
 5 passed before, 5 passed after — the suite could not tell the difference
+```
+
+The gate, proved repeatable rather than merely green once:
+
+```
+pnpm build then pnpm gate    exit 0   the exact sequence that used to fail
+pnpm gate a second time      exit 0   10/10 steps again, immediately after
 ```
 
 The authorship hook, before it was trusted:

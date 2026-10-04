@@ -1,4 +1,6 @@
+# Generated output. Nothing here was written by a person.
 .next
+.next-e2e
 .next-ci
 node_modules
 coverage
@@ -6,3 +8,21 @@ playwright-report
 test-results
 pnpm-lock.yaml
 public
+
+# Next.js owns this file and rewrites it on every `next build` and `next dev`,
+# reformatting the whole document its own way - short arrays expanded across
+# lines where Prettier would collapse them, and the last line terminated CRLF on
+# Windows. The two tools therefore disagree permanently, and the disagreement is
+# invisible: `git status` reports the tree clean because Git normalises line
+# endings away, so a build leaves a file that fails `format:check` and there is
+# no diff to revert.
+#
+# Removing it from Prettier's remit is a boundary, not a suppression. Prettier
+# never had a correctness opinion about this file - `tsc` does, and the gate
+# runs `tsc` over it twice (tsconfig.json and tsconfig.tests.json). Letting a
+# build tool own the formatting of its own config is the smaller evil than
+# letting the gate fail on a file nobody edited.
+#
+# tsconfig.tests.json is deliberately NOT listed: no tool rewrites it, so it
+# stays under Prettier like every other source file.
+tsconfig.json
