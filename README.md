@@ -127,6 +127,9 @@ smaller one that claims exactly what it does:
   were found — but `action.yml` installs `cerberus-ci@0.1.0` from npm, and that
   package predates this rebuild. The Action is not yet exercising this code.
 
+Every gap listed above has a place in [`ROADMAP.md`](ROADMAP.md), with what
+"done" means for each one.
+
 ---
 
 ## Honest status
