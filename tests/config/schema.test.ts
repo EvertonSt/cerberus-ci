@@ -219,5 +219,90 @@ classifier:
       const result = validateConfig(config);
       expect(result.valid).toBe(false);
     });
+
+    /*
+     * Regression tests for a crash found by running the GitHub Action rather
+     * than by testing: `Object.entries(config.perf.thresholds)` threw
+     * "Cannot convert undefined or null to object" on the configuration this
+     * repository ships.
+     */
+    it("reports rather than throws when perf.thresholds is null", () => {
+      const config = {
+        ...DEFAULT_CONFIG,
+        perf: { ...DEFAULT_CONFIG.perf, thresholds: null },
+      } as unknown as CerberusConfig;
+
+      expect(() => validateConfig(config)).not.toThrow();
+      const result = validateConfig(config);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((e) => e.includes("perf.thresholds"))).toBe(true);
+    });
+
+    it("reports rather than throws when perf.thresholds is not an object", () => {
+      const config = {
+        ...DEFAULT_CONFIG,
+        perf: { ...DEFAULT_CONFIG.perf, thresholds: "page_load_ms: 20" },
+      } as unknown as CerberusConfig;
+
+      expect(() => validateConfig(config)).not.toThrow();
+      expect(validateConfig(config).valid).toBe(false);
+    });
+
+    it("rejects a non-numeric threshold value", () => {
+      const config = {
+        ...DEFAULT_CONFIG,
+        perf: { ...DEFAULT_CONFIG.perf, thresholds: { page_load_ms: "fast" } },
+      } as unknown as CerberusConfig;
+
+      const result = validateConfig(config);
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((e) => e.includes("page_load_ms"))).toBe(true);
+    });
+  });
+
+  describe("the configuration this repository ships", () => {
+    const examplePath = path.join(process.cwd(), "cerberus.config.example.yml");
+
+    it("exists", () => {
+      expect(fs.existsSync(examplePath)).toBe(true);
+    });
+
+    it("parses and passes validation", () => {
+      // This is the file the README tells a reader to copy, and the action's
+      // default `config-path`. Before the deepMerge fix it loaded with
+      // `perf.thresholds === null` and every command failed on load.
+      const config = loadConfig(examplePath);
+      const result = validateConfig(config);
+
+      expect(result.errors).toEqual([]);
+      expect(result.valid).toBe(true);
+    });
+
+    it("keeps the default for a section whose children are all commented out", () => {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "cerberus-cfg-"));
+      const file = path.join(dir, "cerberus.config.yml");
+      try {
+        fs.writeFileSync(
+          file,
+          [
+            "perf:",
+            "  baseline_branch: main",
+            "  thresholds:",
+            "    # everything under here is a comment",
+            "storage:",
+            "  db_path: .cerberus/data.db",
+            "",
+          ].join("\n"),
+        );
+
+        const config = loadConfig(file);
+
+        // null in YAML means "not specified", so the {} default must survive.
+        expect(config.perf.thresholds).toEqual({});
+        expect(validateConfig(config).errors).toEqual([]);
+      } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+      }
+    });
   });
 });

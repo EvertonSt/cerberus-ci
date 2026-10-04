@@ -106,6 +106,22 @@ function deepMerge(
   for (const key of Object.keys(source)) {
     const sourceVal = source[key];
     const targetVal = target[key];
+
+    /*
+     * A YAML key with nothing under it - every child line commented out -
+     * parses as `null`. That is "not specified", not "set to null", so the
+     * default has to survive it.
+     *
+     * Without this, `thresholds:` in the shipped example config replaced the
+     * `{}` default with null and `validateConfig` died on
+     * `Object.entries(null)` instead of reporting anything a person could act
+     * on. The same trap applied to any section: `perf:`, `gate:` or
+     * `storage:` with only comments beneath it.
+     */
+    if (sourceVal === null && Object.prototype.hasOwnProperty.call(target, key)) {
+      continue;
+    }
+
     if (
       sourceVal !== null &&
       sourceVal !== undefined &&
@@ -194,9 +210,26 @@ export function validateConfig(config: CerberusConfig): ConfigValidationResult {
     errors.push(`perf.threshold_pct must be between 0 and 100. Got: ${config.perf.threshold_pct}`);
   }
 
-  for (const [metric, pct] of Object.entries(config.perf.thresholds)) {
-    if (pct <= 0 || pct > 100) {
-      errors.push(`perf.thresholds.${metric} must be between 0 and 100. Got: ${pct}`);
+  // Read through `unknown`: the declared type says this is always an object,
+  // so a guard against it not being one would otherwise look unreachable to
+  // both the compiler and the reader. A hand-edited config is exactly how it
+  // arrives as something else, and a validator that throws is worse than one
+  // that complains.
+  const perfThresholds: unknown = config.perf.thresholds;
+  if (
+    perfThresholds === null ||
+    typeof perfThresholds !== "object" ||
+    Array.isArray(perfThresholds)
+  ) {
+    errors.push(
+      "perf.thresholds must be an object mapping a metric name to a percentage " +
+        `(0-100). Got: ${typeof perfThresholds}.`,
+    );
+  } else {
+    for (const [metric, pct] of Object.entries(perfThresholds as Record<string, number>)) {
+      if (typeof pct !== "number" || Number.isNaN(pct) || pct <= 0 || pct > 100) {
+        errors.push(`perf.thresholds.${metric} must be a number between 0 and 100. Got: ${pct}`);
+      }
     }
   }
 

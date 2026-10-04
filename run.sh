@@ -75,18 +75,22 @@ if [ -n "$PR_NUMBER" ] && [ "${INPUT_SKIP_REPORT:-false}" != "true" ]; then
   }
 fi
 
-# Step 5: Output results as JSON for downstream steps
+# Step 5: Read the counts back for downstream steps.
+#
+# This used to re-run the entire pipeline under a second run id
+# ("${RUN_ID}-report") just to get JSON out of it. That duplicated the ingest,
+# wrote a phantom run into the database, and - because `run` called
+# process.exit() while its stdout was still buffered - handed the script an
+# empty string and a libuv assertion, so the counts below came back 0 even
+# when the gate had just found regressions.
+#
+# `status` reads the run that is already there. Nothing is written twice.
 echo ""
 echo "📊 Results:"
-RESULT_JSON=$(cerberus run \
-  --input "${INPUT_TEST_RESULTS_PATH}" \
-  --format "${INPUT_FORMAT:-playwright-json}" \
-  --run-id "${RUN_ID}-report" \
-  --commit "${GITHUB_SHA}" \
-  --branch "$BRANCH" \
+RESULT_JSON=$(cerberus status \
+  --run-id "$RUN_ID" \
   --json \
-  --no-report \
-  --config "${INPUT_CONFIG_PATH:-cerberus.config.yml}" 2>/dev/null || echo '{"gatePassed":false}')
+  --config "${INPUT_CONFIG_PATH:-cerberus.config.yml}" 2>/dev/null || echo '{}')
 
 # Set outputs using GITHUB_OUTPUT
 if [ -n "${GITHUB_OUTPUT:-}" ]; then
@@ -94,10 +98,17 @@ if [ -n "${GITHUB_OUTPUT:-}" ]; then
   if [ "$GATE_EXIT" -ne 0 ]; then
     GATE_RESULT="fail"
   fi
-  FLAKY_COUNT=$(echo "$RESULT_JSON" | grep -o '"flakyCount":[0-9]*' | cut -d: -f2 || echo "0")
-  REGRESSION_COUNT=$(echo "$RESULT_JSON" | grep -o '"regressionCount":[0-9]*' | cut -d: -f2 || echo "0")
+  # Tolerate whitespace around the colon: `status --json` pretty-prints.
+  FLAKY_COUNT=$(printf '%s' "$RESULT_JSON" | grep -o '"flakyCount"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
+  REGRESSION_COUNT=$(printf '%s' "$RESULT_JSON" | grep -o '"regressionCount"[[:space:]]*:[[:space:]]*[0-9]*' | grep -o '[0-9]*$')
 
   echo "gate-result=$GATE_RESULT" >> "$GITHUB_OUTPUT"
+  # An unreadable count must not silently become 0, which reads as "nothing
+  # found" rather than "could not tell". Fail loudly instead.
+  if [ -z "$FLAKY_COUNT" ] || [ -z "$REGRESSION_COUNT" ]; then
+    echo "::error::could not read flaky/regression counts from 'cerberus status --json'."
+    echo "::error::status returned: ${RESULT_JSON:-<empty>}"
+  fi
   echo "flaky-count=${FLAKY_COUNT:-0}" >> "$GITHUB_OUTPUT"
   echo "regression-count=${REGRESSION_COUNT:-0}" >> "$GITHUB_OUTPUT"
 fi

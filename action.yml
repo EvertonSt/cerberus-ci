@@ -58,13 +58,24 @@ runs:
   using: "composite"
   steps:
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
       with:
-        node-version: "20"
+        # Matches `engines.node` in package.json. This was "20" while the
+        # package required >=22, so the action and the CLI disagreed about
+        # the runtime before anything ran.
+        node-version: "22"
 
     - name: Install Cerberus CI
       shell: bash
-      run: npm install -g cerberus-ci
+      # Pinned to an exact version on purpose. `npm install -g cerberus-ci`
+      # silently follows whatever `latest` happens to be, so the action's
+      # behaviour would change without a commit to this file.
+      #
+      # NOTE: this installs the PUBLISHED package, not the code in this
+      # repository. A change here does not reach the action until a version
+      # is published. See docs/decisions for why that is left to a separate,
+      # deliberate publish rather than guessed at.
+      run: npm install -g cerberus-ci@0.1.0
 
     - name: Run Cerberus CI
       id: cerberus

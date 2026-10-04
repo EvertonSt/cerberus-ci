@@ -8,6 +8,7 @@
 import { Command } from "commander";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import { generateDefaultConfig, loadConfig, validateConfig } from "../lib/config/schema";
 import type { CerberusConfig } from "../lib/config/schema";
 
@@ -105,6 +106,7 @@ interface CliHistoryOptions {
  */
 interface CliStatusOptions {
   config: string;
+  json?: boolean;
   runId: string;
 }
 
@@ -167,9 +169,25 @@ function loadValidConfig(configPath: string): CerberusConfig {
   return config;
 }
 
-const pkg = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "..", "..", "package.json"), "utf-8"),
-) as { version: string };
+/*
+ * `package.json` is read for the version string behind `cerberus --version`.
+ *
+ * This used to use `__dirname`, which does not exist in an ES module - and
+ * package.json sets `"type": "module"`. Nothing caught it: the CLI tests
+ * import the individual command modules, never this entry point, and
+ * `pnpm typecheck` is perfectly happy with an undefined identifier that
+ * happens to be declared by a CommonJS ambient type. The first thing to
+ * actually run it was the GitHub Action, which failed on its very first
+ * command with "ReferenceError: __dirname is not defined in ES module scope".
+ *
+ * `import.meta.url` is the ESM equivalent, and it works under tsx, under a
+ * test runner, and in a bundled dist/cli/index.js alike.
+ */
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+
+const pkg = JSON.parse(fs.readFileSync(path.join(HERE, "..", "..", "package.json"), "utf-8")) as {
+  version: string;
+};
 
 const program = new Command();
 
@@ -299,7 +317,16 @@ program
       }
     }
 
-    process.exit(result.passed ? 0 : 1);
+    /*
+     * `process.exitCode`, not `process.exit`.
+     *
+     * `process.exit()` tears the process down immediately, so anything still
+     * buffered on stdout can be lost. That is not theoretical: the GitHub
+     * Action read this command's JSON from a pipe and got an empty string,
+     * then a libuv assertion on the way out. Setting the code lets Node flush
+     * and exit on its own with the same status.
+     */
+    process.exitCode = result.passed ? 0 : 1;
   });
 
 // ── cerberus report ────────────────────────────────────────────
@@ -374,7 +401,9 @@ program
       console.log("═".repeat(50));
     }
 
-    process.exit(result.gatePassed ? 0 : 1);
+    // See the note on the gate command above: exitCode, not exit, so buffered
+    // stdout is flushed before the process ends.
+    process.exitCode = result.gatePassed ? 0 : 1;
   });
 
 // ── cerberus trends ───────────────────────────────────────────
@@ -505,6 +534,7 @@ program
   .command("status")
   .description("Show classification status for a run")
   .requiredOption("--run-id <id>", "CI run identifier")
+  .option("--json", "Output results as JSON (for CI scripts)")
   .option("-c, --config <path>", "Path to cerberus.config.yml", "cerberus.config.yml")
   .action(async (options: CliStatusOptions) => {
     const config = loadValidConfig(options.config);
@@ -515,7 +545,44 @@ program
       const run = db.getRunByCiId(options.runId);
       if (!run) {
         console.log(`❌ Run not found: ${options.runId}`);
-        process.exit(1);
+        process.exitCode = 1;
+        return;
+      }
+
+      const tests = db.getTestResultsForRun(run.id);
+      const classifications = db.getClassificationsForRun(run.id);
+
+      /*
+       * `--json` exists so a CI script can read the counts without scraping
+       * the human output. The action used to get these numbers by running the
+       * whole pipeline a SECOND time under a different run id, which
+       * duplicated work, wrote a phantom run into the database, and still
+       * reported zero when that second run failed.
+       */
+      if (options.json) {
+        const count = (verdict: string): number =>
+          classifications.filter((c) => c.verdict === verdict).length;
+
+        console.log(
+          JSON.stringify(
+            {
+              runId: options.runId,
+              commit: run.commit_sha,
+              branch: run.branch,
+              prNumber: run.pr_number ?? null,
+              total: tests.length,
+              passed: tests.filter((t) => t.status === "passed").length,
+              failed: tests.filter((t) => t.status === "failed").length,
+              skipped: tests.filter((t) => t.status === "skipped").length,
+              flakyCount: count("flaky"),
+              regressionCount: count("regression"),
+              unknownCount: count("unknown"),
+            },
+            null,
+            2,
+          ),
+        );
+        return;
       }
 
       console.log(`\n🐕‍🦺 Cerberus Status for run ${options.runId}`);
@@ -526,7 +593,6 @@ program
       if (run.pr_number) console.log(`  PR:        #${run.pr_number}`);
 
       // Test results
-      const tests = db.getTestResultsForRun(run.id);
       const passed = tests.filter((t) => t.status === "passed").length;
       const failed = tests.filter((t) => t.status === "failed").length;
       const skipped = tests.filter((t) => t.status === "skipped").length;
@@ -537,7 +603,6 @@ program
       );
 
       // Classifications
-      const classifications = db.getClassificationsForRun(run.id);
       if (classifications.length > 0) {
         const flaky = classifications.filter((c) => c.verdict === "flaky").length;
         const regression = classifications.filter((c) => c.verdict === "regression").length;

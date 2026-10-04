@@ -13,3 +13,16 @@
 allowBuilds:
   esbuild: true
   unrs-resolver: true
+
+# NOT pinned here, deliberately: `pnpm audit` reports a stack-exhaustion DoS in
+# braces <= 3.0.3 (GHSA-vfj7-8cjw-p6xm), reached through
+#   eslint-config-next > @next/eslint-plugin-next > fast-glob > micromatch > braces
+#
+# The advisory names 3.0.4 as the patched version. That version does not exist:
+# braces has no 4.x and 3.0.3 is still the latest publish, and micromatch@4.0.8
+# requires `^3.0.3`. So there is nothing to upgrade to and no override that does
+# not either fail to resolve or force an unsupported major onto micromatch.
+#
+# It is a lint-time dependency that never ships, which is why the security job
+# holds the dev tree at `critical` rather than `high` (ADR 0004). If a patched
+# braces is ever published, this is the first thing to revisit.

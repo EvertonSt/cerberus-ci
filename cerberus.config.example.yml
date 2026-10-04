@@ -77,9 +77,14 @@ perf:
 
   # Per-metric threshold overrides
   # Useful for metrics with known high variance
+  #
+  # The example below is a real, parsed entry rather than a commented one. A
+  # YAML key whose children are ALL commented out parses as null, which used
+  # to replace this map with null and crash the validator - so if you delete
+  # these lines, delete the `thresholds:` line with them.
   thresholds:
-    # api_response_time_ms: 50   # more lenient for API metrics
-    # page_load_ms: 15           # stricter for page load
+    api_response_time_ms: 50 # more lenient for API metrics
+    page_load_ms: 15 # stricter for page load
 
   # Metrics to exclude from gating
   # Useful for known-noisy metrics you want to monitor but not gate on
