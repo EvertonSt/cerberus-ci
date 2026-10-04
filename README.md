@@ -80,7 +80,7 @@ pnpm cerberus gate    --run-id 42                    # exit 0 = pass, 1 = fail
 Or add it to a workflow:
 
 ```yaml
-- uses: EvertonSt/cerberus-ci@v2
+- uses: EvertonSt/cerberus-ci@v2.0.0
   with:
     test-results-path: test-results.json
     ai-provider: mock # or anthropic / openai-compatible

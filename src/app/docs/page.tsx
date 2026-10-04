@@ -228,7 +228,7 @@ export default function DocsPage() {
               <div>
                 <h3 className="text-lg font-semibold text-white mb-3">1. Add the GitHub Action</h3>
                 <CodeBlock
-                  code={`- uses: EvertonSt/cerberus-ci-action@v1
+                  code={`- uses: EvertonSt/cerberus-ci@v2.0.0
   with:
     ai-provider: claude
     ai-api-key: \${{ secrets.ANTHROPIC_API_KEY }}
@@ -278,7 +278,7 @@ npx vitest run --reporter=json --outputFile=test-results.json`}
 
             <div className="space-y-6">
               <CodeBlock
-                code={`- uses: EvertonSt/cerberus-ci-action@v1
+                code={`- uses: EvertonSt/cerberus-ci@v2.0.0
   with:
     # Required
     test-results-path: ./test-results/results.json

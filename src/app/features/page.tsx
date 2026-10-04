@@ -115,7 +115,7 @@ ai:
       "Gate result as output for downstream steps",
       "GitHub Actions annotations for inline PR feedback",
     ],
-    code: `- uses: EvertonSt/cerberus-ci-action@v1
+    code: `- uses: EvertonSt/cerberus-ci@v2.0.0
   with:
     ai-provider: claude
     ai-api-key: \${{ secrets.ANTHROPIC_API_KEY }}

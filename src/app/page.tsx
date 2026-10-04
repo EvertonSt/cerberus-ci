@@ -24,7 +24,7 @@ import { AnimatedStat } from "@/components/AnimatedStat";
 import { PRCommentMockup } from "@/components/PRCommentMockup";
 import { ComparisonTable } from "@/components/ComparisonTable";
 
-const quickStartAction = `- uses: EvertonSt/cerberus-ci-action@v1
+const quickStartAction = `- uses: EvertonSt/cerberus-ci@v2.0.0
   with:
     ai-provider: claude
     ai-api-key: \${{ secrets.ANTHROPIC_API_KEY }}
@@ -195,7 +195,7 @@ export default function HomePage() {
             {
               icon: Terminal,
               title: "GitHub Action",
-              desc: "One line: uses: EvertonSt/cerberus-ci-action@v1. Works with any test framework via JUnit XML.",
+              desc: "One line: uses: EvertonSt/cerberus-ci@v2.0.0. Works with any test framework via JUnit XML.",
             },
             {
               icon: GitBranch,
