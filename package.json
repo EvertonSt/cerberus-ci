@@ -24,6 +24,7 @@
     "test:unit:watch": "vitest",
     "test:unit:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
+    "capture:screenshots": "tsx scripts/capture-screenshots.ts",
     "cerberus": "tsx src/cli/index.ts",
     "gate": "bash scripts/gate.sh",
     "verify": "pnpm verify:secrets && pnpm verify:links && pnpm verify:attribution",

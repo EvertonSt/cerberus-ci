@@ -28,6 +28,13 @@ export default defineConfig({
   webServer: {
     command: `pnpm exec next dev -p ${PORT}`,
     url: BASE_URL,
+    /*
+     * The suite writes to its own dist dir so a running dev server, and the
+     * `.next` a production build just produced, are both left alone. Setting
+     * it here rather than in the command keeps it working on Windows, where a
+     * `VAR=value cmd` prefix is not a thing.
+     */
+    env: { NEXT_DIST_DIR: ".next-e2e" },
     reuseExistingServer: !process.env.CI,
     timeout: 180_000,
     stdout: "pipe",

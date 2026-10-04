@@ -1,7 +1,11 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "skipLibCheck": true,
     "allowJs": true,
     "strict": true,
@@ -20,14 +24,19 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "types": ["node", "vitest/globals"],
+    "types": [
+      "node",
+      "vitest/globals"
+    ],
     "plugins": [
       {
         "name": "next"
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": [
+        "./src/*"
+      ]
     }
   },
   "//": "The PRODUCT project. Tests are typechecked separately by tsconfig.tests.json, which is where the one deliberate difference between the two lives. See docs/decisions/0005-tests-are-not-indexed-code.md.",
@@ -39,7 +48,14 @@
     "e2e/**/*.ts",
     "*.config.ts",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    ".next-e2e/types/**/*.ts",
+    ".next-e2e/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules", ".next", ".next-ci", "tests"]
+  "exclude": [
+    "node_modules",
+    ".next",
+    ".next-ci",
+    "tests"
+  ]
 }
