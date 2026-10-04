@@ -121,6 +121,11 @@ smaller one that claims exactly what it does:
   provider only.** No test in this repository has called a live model API.
 - **Performance regression detection is tested against fixtures**, never
   against a trace from a real production run of this project.
+- **The GitHub Action has never run on GitHub.** Its entry point has been
+  driven locally against this repository's own CLI — which is how the `__dirname`
+  crash, the config that would not validate, and the `flaky-count: 0` output
+  were found — but `action.yml` installs `cerberus-ci@0.1.0` from npm, and that
+  package predates this rebuild. The Action is not yet exercising this code.
 
 ---
 
@@ -130,6 +135,7 @@ smaller one that claims exactly what it does:
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Works**             | Parsing (JUnit XML, Playwright JSON), deterministic classification, the flaky/regression gate, performance budgets, SQLite storage, PR comment reports, GitHub Actions annotations, the CLI, the site, the CI pipeline |
 | **Stubbed / limited** | The Anthropic and OpenAI-compatible providers are implemented and mocked-tested, but have never been run against a live endpoint by this repository's own CI                                                           |
+| **Known, unfixable**  | One dev-only advisory (`braces` <= 3.0.3, via `eslint-config-next`). Its patched version **does not exist** — 3.0.3 is still the latest publish and `micromatch` requires `^3.0.3`. Production audit is clean          |
 | **Not built**         | No hosted dashboard. No billing. No multi-repo aggregation. No write-back to the source tree                                                                                                                           |
 | **Not deployed**      | Deploy-ready, not deployed — `vercel.json` is configured and the production build is verified locally                                                                                                                  |
 

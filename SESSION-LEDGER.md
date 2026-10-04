@@ -179,3 +179,77 @@ https://github.com/EvertonSt/cerberus-ci.git` is the intended permanent
    the site's whole test story.
 5. Assert something visual in the e2e run — a computed style, a loaded font, or
    a screenshot diff — so the next "green but broken" has somewhere to land.
+
+---
+
+## 2026-10-03 — Correcting the first entry, and running the thing
+
+The first entry above claims `twelve` typed command handlers. It is twelve
+_option interfaces_; there are thirteen action handlers, because `init` is typed
+inline as `{ force: boolean }`. The number was corrected rather than quietly
+edited — that is what an append-only ledger is for.
+
+Everything below came from running the artifact instead of reading it.
+
+### DID
+
+- **Ran the gate on Linux.** Not CI — a real Ubuntu 24.04 under WSL2, Node
+  22.23.3, pnpm 11.20.0, against a clean clone of this history.
+- **Ran `pnpm audit` for the first time**, which had been listed as an open gap.
+- **Drove `run.sh` against this repository's CLI** rather than against the
+  package on npm.
+- **Added an eleventh gate step**: a build that modifies a tracked file now
+  fails, watched failing by injecting a write into the build step.
+
+### PROOF
+
+```
+pnpm audit --audit-level high --prod   exit 0   No known vulnerabilities found
+pnpm audit --audit-level critical      exit 0   (one dev high, below the gate)
+gate on Linux, 11 steps                exit 0
+```
+
+`pnpm audit` was not clean when first run. It reported **1 high and 3 critical**
+against production: `next` 16.3.2 (three advisories, one an RCE) and
+`js-yaml` 4.3.1. Both are direct dependencies, pinned exactly, so both moved:
+`next` 16.3.8 and `js-yaml` 4.3.2. `js-yaml` 5.x exists but the advisory only
+required >= 4.3.2, and a major bump to a config parser is not a security fix.
+
+The eleventh gate step, watched failing:
+
+```
+PASS format:check lint typecheck unit tests verify:* coverage build e2e
+FAIL tree unchanged by build (exit 1)
+```
+
+The action, driven against this repository's CLI on its own fixture:
+
+```
+before   RUN_SH_EXIT=127   flaky-count=0   regression-count=0   runs in db: 2
+after    RUN_SH_EXIT=1     flaky-count=1   regression-count=1   runs in db: 1
+```
+
+### DID NOT PROVE
+
+- **The Action still does not exercise this code.** `action.yml` installs
+  `cerberus-ci@0.1.0` from npm, published in August by a different account and
+  predating this rebuild. Driving `run.sh` against the local CLI proved the
+  _sequence_ is sound; it did not prove the published package behaves the same.
+  Publishing is a separate, deliberate act and was not done.
+- **CI has still never run.** The Linux gate is the closest available proxy and
+  it is not the same thing: no GitHub-hosted runner, no `actions/checkout`, no
+  artifact upload.
+- **The `braces` advisory has no available fix.** The advisory names 3.0.4;
+  braces has no 4.x, 3.0.3 is still the latest publish, and
+  `micromatch@4.0.8` requires `^3.0.3`. Pinning the advisory's own suggested
+  version fails to resolve. It is dev-only and never ships.
+- **Playwright's browser libraries could not be installed under WSL** without
+  root, so whether the e2e job passes on a bare Ubuntu runner is still an
+  assumption resting on `playwright install --with-deps`.
+
+### NEXT
+
+1. First push, and read the run.
+2. Publish a version, or point the Action at a checkout, so `action.yml` runs
+   this code instead of 0.1.0.
+3. Re-check `braces` when a patched version is actually published.
