@@ -40,6 +40,32 @@ run_step() {
   return $code
 }
 
+tree_snapshot() {
+  # Tracked files only. A build creates plenty of untracked output (.next,
+  # playwright-report, .next-e2e) and none of that is a finding.
+  #
+  # `--porcelain` rather than `git diff --name-only` on purpose. Git
+  # normalises line endings away when diffing, so the one mutation that
+  # motivated this check - Next.js rewriting tsconfig.json and terminating it
+  # CRLF - showed as an empty diff and a clean-looking tree. The porcelain
+  # status still flagged it, which is what actually caught it.
+  git status --porcelain --untracked-files=no 2>/dev/null | LC_ALL=C sort
+}
+
+check_tree_unchanged() {
+  local before="$1" after
+  after="$(tree_snapshot)"
+  if [ "$before" = "$after" ]; then
+    return 0
+  fi
+  printf '\nA step above modified tracked files.\n\n'
+  printf 'before:\n%s\n\nafter:\n%s\n\n' "$before" "$after"
+  printf 'A build tool is rewriting a file this repository owns. That is how\n'
+  printf 'tsconfig.json came to be reformatted by Next.js on every build,\n'
+  printf 'leaving a gate that failed with a clean tree and no diff to revert.\n'
+  return 1
+}
+
 run_step "format:check" pnpm format:check
 run_step "lint"          pnpm lint
 run_step "typecheck"     pnpm typecheck
@@ -48,10 +74,21 @@ run_step "verify:secrets"  pnpm verify:secrets
 run_step "verify:links"    pnpm verify:links
 run_step "verify:attribution" pnpm verify:attribution
 
+# Only meaningful where there is a repository to compare against.
+TRACK_TREE=0
+if git rev-parse --git-dir >/dev/null 2>&1; then
+  TRACK_TREE=1
+  TREE_BEFORE="$(tree_snapshot)"
+fi
+
 if [ "$FAST" -eq 0 ]; then
   run_step "coverage floor" pnpm test:unit:coverage
   run_step "build"          pnpm build
   run_step "e2e"            pnpm test:e2e
+fi
+
+if [ "$TRACK_TREE" -eq 1 ]; then
+  run_step "tree unchanged by build" check_tree_unchanged "$TREE_BEFORE"
 fi
 
 printf '\n\033[1m══ GATE SUMMARY ══\033[0m\n'
